@@ -195,6 +195,7 @@ class _LoginPageState extends State<LoginPage>
                         controller: _emailController,
                         focusNode: _emailFocus,
                         keyboardType: TextInputType.emailAddress,
+                        style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           prefixIcon:
                               Icon(Icons.email_outlined, color: primaryColor),
@@ -235,6 +236,7 @@ class _LoginPageState extends State<LoginPage>
                         controller: _passwordController,
                         focusNode: _passwordFocus,
                         obscureText: _obscurePassword,
+                        style: const TextStyle(color: Colors.white),
                         decoration: InputDecoration(
                           prefixIcon:
                               Icon(Icons.lock_outline, color: primaryColor),

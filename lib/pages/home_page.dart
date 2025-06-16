@@ -501,11 +501,46 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
-                  CircleAvatar(
-                    backgroundColor: cardColor,
-                    backgroundImage: NetworkImage('https://i.pravatar.cc/300'),
-                    radius: 20,
-                  ),
+                  _isAdmin
+                      ? Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: accentColor,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Text(
+                            'ADMIN',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
+                          ),
+                        )
+                      : _isLoggedIn
+                          ? CircleAvatar(
+                              backgroundColor: cardColor,
+                              backgroundImage:
+                                  NetworkImage('https://i.pravatar.cc/300'),
+                              radius: 20,
+                            )
+                          : Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.grey[700],
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: const Text(
+                                'GUEST',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
                   const SizedBox(width: 8),
                 ],
               ),

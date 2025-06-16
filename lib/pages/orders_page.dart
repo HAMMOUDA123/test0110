@@ -92,97 +92,184 @@ class _OrdersPageState extends State<OrdersPage>
     }
   }
 
-  void _showOrderDetails(Map<String, dynamic> order) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
-      builder: (context) => Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.blue.shade50,
-                  child: Text(
-                    (order['delivery_address'] ?? '')
-                        .split(' ')
-                        .map((e) => e.isNotEmpty ? e[0] : '')
-                        .take(2)
-                        .join()
-                        .toUpperCase(),
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, color: Colors.blue),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Text(order['delivery_address'] ?? '',
-                    style: const TextStyle(
-                        fontSize: 18, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                const Icon(Icons.shopping_bag, size: 20, color: Colors.black54),
-                const SizedBox(width: 8),
-                Text('Order: ', style: TextStyle(fontWeight: FontWeight.w600)),
-                Text('Order #' + (order['id']?.toString() ?? ''),
-                    style: const TextStyle(color: Colors.black87)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.calendar_today,
-                    size: 18, color: Colors.black54),
-                const SizedBox(width: 8),
-                Text('Date: ', style: TextStyle(fontWeight: FontWeight.w600)),
-                Text((order['created_at'] ?? '').toString().substring(0, 16),
-                    style: const TextStyle(color: Colors.black87)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.attach_money, size: 20, color: Colors.black54),
-                const SizedBox(width: 8),
-                Text('Total: ', style: TextStyle(fontWeight: FontWeight.w600)),
-                Text('\$${(order['total_price'] ?? 0).toStringAsFixed(2)}',
-                    style: const TextStyle(color: Colors.black87)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                const Icon(Icons.info_outline, size: 20, color: Colors.black54),
-                const SizedBox(width: 8),
-                Text('Status: ', style: TextStyle(fontWeight: FontWeight.w600)),
-                Text(order['status']?.toString() ?? '',
-                    style: const TextStyle(color: Colors.black87)),
-              ],
-            ),
-            const SizedBox(height: 24),
-            Center(
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Close'),
-              ),
-            ),
-          ],
+  void _showOrderDetails(Map<String, dynamic> order) async {
+    try {
+      // First, let's check what order we're looking at
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Looking at order ID: ${order['id']}'),
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+
+      // First fetch order items
+      final orderItems = await Supabase.instance.client
+          .from('order_items')
+          .select()
+          .eq('order_id', order['id']);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Order items: ${orderItems.toString()}'),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+
+      // Then fetch products for these items
+      final productIds = orderItems.map((item) => item['item_id']).toList();
+      final products = await Supabase.instance.client
+          .from('products')
+          .select()
+          .filter('id', 'in', productIds);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Products: ${products.toString()}'),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+
+      // Create a map of product id to product details
+      final productMap = {for (var product in products) product['id']: product};
+
+      if (!mounted) return;
+
+      showModalBottomSheet(
+        context: context,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
         ),
-      ),
-    );
+        builder: (context) => Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: Colors.blue.shade50,
+                    child: Text(
+                      (order['delivery_address'] ?? '')
+                          .split(' ')
+                          .map((e) => e.isNotEmpty ? e[0] : '')
+                          .take(2)
+                          .join()
+                          .toUpperCase(),
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold, color: Colors.blue),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Text(order['delivery_address'] ?? '',
+                      style: const TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  const Icon(Icons.shopping_bag,
+                      size: 20, color: Colors.black54),
+                  const SizedBox(width: 8),
+                  Text('Order: ',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text('Order #' + (order['id']?.toString() ?? ''),
+                      style: const TextStyle(color: Colors.black87)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.fastfood, size: 20, color: Colors.black54),
+                  const SizedBox(width: 8),
+                  Text('Products: ',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (orderItems.isEmpty)
+                          const Text('No products listed',
+                              style: TextStyle(color: Colors.black87))
+                        else
+                          ...orderItems.map((item) {
+                            final product = productMap[item['item_id']];
+                            return Text(
+                              '• ${product?['name'] ?? 'Unknown Product'} (x${item['quantity']}) - \$${(item['price'] ?? 0).toStringAsFixed(2)}',
+                              style: const TextStyle(color: Colors.black87),
+                            );
+                          }).toList(),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.calendar_today,
+                      size: 18, color: Colors.black54),
+                  const SizedBox(width: 8),
+                  Text('Date: ', style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text((order['created_at'] ?? '').toString().substring(0, 16),
+                      style: const TextStyle(color: Colors.black87)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.attach_money,
+                      size: 20, color: Colors.black54),
+                  const SizedBox(width: 8),
+                  Text('Total: ',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text('\$${(order['total_price'] ?? 0).toStringAsFixed(2)}',
+                      style: const TextStyle(color: Colors.black87)),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(Icons.info_outline,
+                      size: 20, color: Colors.black54),
+                  const SizedBox(width: 8),
+                  Text('Status: ',
+                      style: TextStyle(fontWeight: FontWeight.w600)),
+                  Text(order['status']?.toString() ?? '',
+                      style: const TextStyle(color: Colors.black87)),
+                ],
+              ),
+              const SizedBox(height: 24),
+              Center(
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text('Close'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    } catch (e) {
+      print('Error fetching order details: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch order details: $e')),
+      );
+    }
   }
 
   void _showStatusChangeDialog(int index) async {
